@@ -9,6 +9,52 @@ if (!isset($_SESSION['username'])) {
 
 $sql = "SELECT * FROM tb_product";
 $result = mysqli_query($db, $sql);
+
+if (isset($_POST['submit'])) {
+  $product_name = $_POST['product_name'];
+  $price = $_POST['price'];
+  
+  $sql = "SELECT COUNT(*) FROM tb_transaction_header";
+  $result = mysqli_query($db, $sql);
+  $row = $result->fetch_row();
+  $user = $_SESSION['username'];
+  if ($row[0] == 0) {
+      $angka     = 1; // Nilai Proses
+      $fzeropadded  = sprintf("%03d", $angka);
+      $selectData   = " SELECT * FROM tb_product WHERE product_code='$product_name' ";
+      $result = mysqli_query($db, $selectData);
+      $row = $result->fetch_array(MYSQLI_NUM);
+
+      $date = date('Y-m-d');
+
+      $queryHeader =  " INSERT INTO tb_transaction_header (document_code, document_number, user, total, date) VALUES ('TRX', '$fzeropadded', '$user', '$price', '$date') ";
+      $document_code = mysqli_query($db, $queryHeader);
+
+      if( $document_code ) {
+        $queryDetail =  " INSERT INTO tb_transaction_detail (document_code, document_number, product_code, price, quantity, unit, sub_total, currency) VALUES ('TRX', '$fzeropadded', '$product_name', '$price', 1, '$row[6]', '$price', '$row[3]') ";
+        $document_detail = mysqli_query($db, $queryDetail);  
+      }
+  } else {
+      $angka      = $row[0]+1;
+      $fzeropadded  = sprintf("%03d", $angka);
+      $selectData   = " SELECT * FROM tb_product WHERE product_code='$product_name' ";
+      $result = mysqli_query($db, $selectData);
+      $row = $result->fetch_array(MYSQLI_NUM);
+
+      $date = date('Y-m-d');
+
+      $queryInsert =  " INSERT INTO tb_transaction_header (document_code, document_number, user, total, date) VALUES ('TRX', '$fzeropadded', '$user', '$price', '$date') ";
+      $document_code = mysqli_query($db, $queryInsert);
+
+      if( $document_code ) {
+        $queryDetail =  " INSERT INTO tb_transaction_detail (document_code, document_number, product_code, price, quantity, unit, sub_total, currency) VALUES ('TRX', '$fzeropadded', '$product_name', '$price', 1, '$row[6]', '$price', '$row[3]') ";
+        $document_detail = mysqli_query($db, $queryDetail);  
+      }
+  }
+
+  $sql = "SELECT * FROM tb_product";
+  $result = mysqli_query($db, $sql);
+}
 ?>
  
  <!DOCTYPE html>
@@ -111,7 +157,7 @@ $result = mysqli_query($db, $sql);
                         <img class="image" src="background.jpg">
                     </div>
                     <div class="col sm-8">
-                        <a href="product_detail.php/".<?php echo $data['product_name']; ?>."><?php echo $data['product_name']; ?></a><br>
+                        <a href="product_detail.php/?product=<?php echo $data['product_code']; ?>"><?php echo $data['product_name']; ?></a><br>
                         <?php if($data['discount'] != ""){ ?>
                             <label><del><?php echo $data['price']; ?><del>,-</label><br>
                             <?php $price = ($data['discount']/100)*$data['price']; ?>
@@ -121,13 +167,17 @@ $result = mysqli_query($db, $sql);
                         <label><?php echo $data['price']-$price; ?>,-</label>
                     </div>
                     <div class="col sm-2">
-                        <button name="submit" class="btn btn-primary">BUY</button>
+                        <form action="" method="POST" class="login-email">
+                            <input type="hidden" class="form-control" name="product_name" value="<?php echo $data['product_code']; ?>">
+                            <input type="hidden" class="form-control" name="price" value="<?php echo $data['price']-$price; ?>">
+                            <button name="submit" class="btn btn-primary">BUY</button>
+                        </form>
                     </div>
                 </div>
               <?php } ?>
               <div class="row">
                 <div class="col sm-12 text-center">
-                    <a href="checkout_page.php" class="btn btn-primary">CONFIRM</a>
+                    <a href="checkout_page.php" class="btn btn-primary">CHECKOUT</a>
                 </div>
               </div>
             </div>
