@@ -7,7 +7,24 @@ if (!isset($_SESSION['username'])) {
     header("Location: index.php");
 }
 
-$sql = "SELECT * FROM tb_product";
+$user = $_SESSION["username"];
+
+$sql = "SELECT
+count(*) as numbers,
+b.document_code,
+b.document_number,
+b.quantity,
+b.sub_total,
+b.unit,
+c.price,
+b.product_code,
+c.product_name,
+c.discount
+FROM
+tb_transaction_header a
+INNER JOIN tb_transaction_detail b ON a.document_number = b.document_number
+JOIN tb_product c ON b.product_code=c.product_code
+WHERE a.user = '$user' AND ( a.flag_checkout = 0 OR a.flag_checkout IS NULL )";
 $result = mysqli_query($db, $sql);
 ?>
  
@@ -18,6 +35,7 @@ $result = mysqli_query($db, $sql);
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Penjualan</title>
         <!-- bootstrap 5 css -->
+        <script src="https://code.jquery.com/jquery-3.6.3.js" integrity="sha256-nQLuAZGRRcILA+6dMBOvcRh5Pe310sBpanc6+QBmyVM=" crossorigin="anonymous"></script>
         <link
           rel="stylesheet"
           href="https://stackpath.bootstrapcdn.com/bootstrap/5.0.0-alpha2/css/bootstrap.min.css"
@@ -112,14 +130,25 @@ $result = mysqli_query($db, $sql);
                             <div class="col sm-2">
                                 <img class="image" src="background.jpg">                                
                             </div>
-                            <div class="col sm-8">
+                            <div class="col sm-10">
                                 <label><?php echo $data['product_name']; ?></label><br>
+                                <div class="row g-3 align-items-center">
+                                  <div class="col-auto col-lg-1">
+                                    <input type="text" min="1" max="3" id="counter" class="form-control" aria-describedby="counterNumber" value="<?php echo $data["numbers"]; ?>">
+                                  </div>
+                                  <div class="col-auto">
+                                    <span id="counterNumber" class="form-text">
+                                      <?php echo $data["unit"] ?>
+                                    </span>
+                                  </div>
+                                </div>
                                 <?php if($data['discount'] != ""){ ?>
                                     <?php $price = ($data['discount']/100)*$data['price']; ?>
                                 <?php }else{ ?>
                                     <?php $price = $data['price']; ?>
                                 <?php } ?>
-                                <label><?php echo $data['price']-$price; ?>,-</label>
+                                <input type="hidden" id="pricetotal" value="<?php echo $data['price']-$price; ?>">
+                                <label class="subtotal">Subtotal : Rp. <?php echo number_format(($data['price']-$price)*$data["numbers"], 0, '', '.'); ?>,-</label>
                             </div>
                         </div>
                     </div>
@@ -127,6 +156,7 @@ $result = mysqli_query($db, $sql);
               <?php } ?>
               <div class="row">
                 <div class="col sm-12 text-center">
+                    <span>TOTAL : Rp. ,-</span></br>
                     <button name="submit" class="btn btn-primary">CONFIRM</button>
                 </div>
               </div>
@@ -135,7 +165,19 @@ $result = mysqli_query($db, $sql);
         </div>
     
         <script>
-    
+          $("#counter").keypress(function(e){
+            var charCode = (event.which) ? event.which : event.keyCode
+            if ((charCode >= 48 && charCode <= 57)
+            || charCode == 46
+            || charCode == 44)
+            
+
+            alert($(this).val());
+            return true;
+            return false;
+
+          });
+
           // event will be executed when the toggle-button is clicked
           document.getElementById("button-toggle").addEventListener("click", () => {
     
