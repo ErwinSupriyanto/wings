@@ -7,7 +7,58 @@ if (!isset($_SESSION['username'])) {
     header("Location: index.php");
 }
 
-$sql = "SELECT * FROM tb_product";
+$url = "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
+
+$url_components = parse_url($url);
+ 
+parse_str($url_components['query'], $params);
+     
+$product_code_detail = $params['product'];
+
+if (isset($_POST['submit'])) {
+  $product_name = $_POST['product_name'];
+  $price = $_POST['price'];
+  
+  $sql = "SELECT COUNT(*) FROM tb_transaction_header";
+  $result = mysqli_query($db, $sql);
+  $row = $result->fetch_row();
+  $user = $_SESSION['username'];
+  if ($row[0] == 0) {
+      $angka     = 1; // Nilai Proses
+      $fzeropadded  = sprintf("%03d", $angka);
+      $selectData   = " SELECT * FROM tb_product WHERE product_code='$product_name' ";
+      $result = mysqli_query($db, $selectData);
+      $row = $result->fetch_array(MYSQLI_NUM);
+
+      $date = date('Y-m-d');
+
+      $queryHeader =  " INSERT INTO tb_transaction_header (document_code, document_number, user, total, date) VALUES ('TRX', '$fzeropadded', '$user', '$price', '$date') ";
+      $document_code = mysqli_query($db, $queryHeader);
+
+      if( $document_code ) {
+        $queryDetail =  " INSERT INTO tb_transaction_detail (document_code, document_number, product_code, price, quantity, unit, sub_total, currency) VALUES ('TRX', '$fzeropadded', '$product_name', '$price', 1, '$row[6]', '$price', '$row[3]') ";
+        $document_detail = mysqli_query($db, $queryDetail);  
+      }
+  } else {
+      $angka      = $row[0]+1;
+      $fzeropadded  = sprintf("%03d", $angka);
+      $selectData   = " SELECT * FROM tb_product WHERE product_code='$product_name' ";
+      $result = mysqli_query($db, $selectData);
+      $row = $result->fetch_array(MYSQLI_NUM);
+
+      $date = date('Y-m-d');
+
+      $queryInsert =  " INSERT INTO tb_transaction_header (document_code, document_number, user, total, date) VALUES ('TRX', '$fzeropadded', '$user', '$price', '$date') ";
+      $document_code = mysqli_query($db, $queryInsert);
+
+      if( $document_code ) {
+        $queryDetail =  " INSERT INTO tb_transaction_detail (document_code, document_number, product_code, price, quantity, unit, sub_total, currency) VALUES ('TRX', '$fzeropadded', '$product_name', '$price', 1, '$row[6]', '$price', '$row[3]') ";
+        $document_detail = mysqli_query($db, $queryDetail);  
+      }
+  }
+}
+
+$sql = "SELECT * FROM tb_product WHERE product_code = '$product_code_detail'";
 $result = mysqli_query($db, $sql);
 ?>
  
@@ -72,25 +123,25 @@ $result = mysqli_query($db, $sql);
           <div class="sidebar p-4 bg-primary" id="sidebar">
             <h4 class="mb-5 text-white">Penjualan</h4>
             <li>
-              <a class="text-white" href="berhasil_login.php">
+              <a class="text-white" href="../berhasil_login.php">
                 <i class="bi bi-fire mr-2"></i>
                 Product List
               </a>
             </li>
             <li>
-              <a class="text-white" href="checkout_page.php">
+              <a class="text-white" href="../checkout_page.php">
                 <i class="bi bi-view-list mr-2"></i>
                 Checkout Page
               </a>
             </li>
             <li>
-              <a class="text-white" href="report_penjualan.php">
+              <a class="text-white" href="../report_penjualan.php">
                 <i class="bi bi-view-list mr-2"></i>
                 Report Penjualan
               </a>
             </li>
             <li>
-                <a class="text-white" href="logout.php">
+                <a class="text-white" href="../logout.php">
                     <i class="bi-door-closed"></i>
                     Logout
                 </a>
@@ -110,7 +161,7 @@ $result = mysqli_query($db, $sql);
                     <div class="col sm-2">
                         <img class="image" src="../background.jpg">
                     </div>
-                    <div class="col sm-8">
+                    <div class="col sm-10">
                         <label><?php echo $data['product_name']; ?></label><br>
                         <?php if($data['discount'] != ""){ ?>
                             <label><del><?php echo $data['price']; ?><del>,-</label><br>
@@ -122,16 +173,17 @@ $result = mysqli_query($db, $sql);
                         <label><?php echo $data['dimension']; ?></label></br>
                         <label><?php echo $data['unit']; ?></label>
                     </div>
-                    <div class="col sm-2">
-                        <button name="submit" class="btn btn-primary">BUY</button>
-                    </div>
                 </div>
-              <?php } ?>
               <div class="row">
                 <div class="col sm-12 text-center">
-                    <button name="submit" class="btn btn-primary">CHECKOUT</button>
+                    <form action="" method="POST" class="login-email">
+                        <input type="hidden" class="form-control" name="product_name" value="<?php echo $data['product_code']; ?>">
+                        <input type="hidden" class="form-control" name="price" value="<?php echo $data['price']-$price; ?>">
+                        <button name="submit" class="btn btn-primary">BUY</button>
+                    </form>
                 </div>
               </div>
+              <?php } ?>
             </div>
           </div>
         </div>
