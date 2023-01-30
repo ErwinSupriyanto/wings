@@ -122,7 +122,7 @@ $result = mysqli_query($db, $sql);
           <div class="card mt-5">
             <div class="card-body">
               <h4>Checkout Page</h4>
-            
+              <?php $subtotal = ""; ?>
               <?php while($data = mysqli_fetch_assoc($result)){ ?>
                 <div class="row">
                     <div class="col sm-12">
@@ -149,6 +149,7 @@ $result = mysqli_query($db, $sql);
                                 <?php } ?>
                                 <input type="hidden" id="pricetotal" value="<?php echo $data['price']-$price; ?>">
                                 <label class="subtotal">Subtotal : Rp. <?php echo number_format(($data['price']-$price)*$data["numbers"], 0, '', '.'); ?>,-</label>
+                                <?php $subtotal .= number_format(($data['price']-$price)*$data["numbers"], 0, '', '.'); ?>
                             </div>
                         </div>
                     </div>
@@ -156,7 +157,7 @@ $result = mysqli_query($db, $sql);
               <?php } ?>
               <div class="row">
                 <div class="col sm-12 text-center">
-                    <span>TOTAL : Rp. ,-</span></br>
+                    <span>TOTAL : Rp. <?php echo $subtotal; ?> ,-</span></br>
                     <button name="submit" class="btn btn-primary">CONFIRM</button>
                 </div>
               </div>
