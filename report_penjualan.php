@@ -7,7 +7,20 @@ if (!isset($_SESSION['username'])) {
     header("Location: index.php");
 }
 
-$sql = "SELECT * FROM tb_product";
+$sql = "SELECT
+count(*) as number,
+CONCAT(b.document_code,' - ',	b.document_number) as document_header,
+a.`user`,
+b.sub_total*count(*) as total,
+DATE_FORMAT(a.date,'%d %M %Y') as date_buy,
+c.product_name 
+FROM
+tb_transaction_header a
+INNER JOIN tb_transaction_detail b ON a.document_number = b.document_number
+JOIN tb_product c ON b.product_code = c.product_code 
+WHERE
+a.USER = 'erwin@gmail.com' 
+AND ( a.flag_checkout = 0 OR a.flag_checkout IS NULL )";
 $result = mysqli_query($db, $sql);
 ?>
  
@@ -100,7 +113,7 @@ $result = mysqli_query($db, $sql);
             <div class="card-body">
               <h4>Report Penjualan</h4>
             
-              <table>
+              <table class="table">
                 <thead>
                     <tr>
                         <td>Transaction</td>
@@ -113,11 +126,11 @@ $result = mysqli_query($db, $sql);
                 <tbody>
                    <?php while($data = mysqli_fetch_assoc($result)){ ?>
                     <tr>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
+                        <td><?php echo $data["document_header"] ?></td>
+                        <td><?php echo $data["user"] ?></td>
+                        <td><?php echo 'Rp. '.number_format($data["total"], 0, '', '.'). ' ,-' ?></td>
+                        <td><?php echo $data["date_buy"] ?></td>
+                        <td><?php echo $data["product_name"] ?></td>
                     </tr>
                     <?php } ?>
                 </tbody>
